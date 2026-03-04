@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンガポール絶品グルメガイド | おすすめ11選</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (スタイリング用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fdf2f8',
+                            100: '#fce7f3',
+                            500: '#ec4899',
+                            600: '#db2777',
+                            900: '#831843',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet.js (地図表示用) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            z-index: 10;
+        }
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .marker-cluster {
+            background-clip: padding-box;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+    <!-- ヘッダーセクション -->
+    <header class="bg-gradient-to-r from-rose-500 to-orange-500 text-white py-12 px-6 shadow-lg text-center relative overflow-hidden">
+        <div class="relative z-10 max-w-4xl mx-auto">
+            <span class="bg-white/20 text-white text-sm font-bold tracking-wider py-1 px-3 rounded-full uppercase mb-4 inline-block">Singapore Gourmet Trip</span>
+            <h1 class="text-4xl md:text-5xl font-black mb-4 leading-tight">シンガポール絶品グルメ<br class="hidden md:block">マストイート11選</h1>
+            <p class="text-lg md:text-xl opacity-90 font-medium">ペーパーチキン・ラクサ・バクテー・チリクラブの名店を制覇しよう！</p>
+        </div>
+        <!-- 装飾的な背景パターン -->
+        <div class="absolute inset-0 opacity-10" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- フィルター機能セクション (新規追加) -->
+        <section class="mb-8">
+            <div class="flex flex-wrap gap-3 justify-center" id="filter-buttons">
+                <button class="filter-btn active px-5 py-2 rounded-full border border-slate-300 text-sm font-bold bg-slate-800 text-white shadow-sm transition-colors" data-category="all">🍽️ すべて</button>
+                <button class="filter-btn px-5 py-2 rounded-full border border-slate-300 text-sm font-bold bg-white text-slate-600 hover:bg-slate-50 shadow-sm transition-colors" data-category="ペーパーチキン">🍗 ペーパーチキン</button>
+                <button class="filter-btn px-5 py-2 rounded-full border border-slate-300 text-sm font-bold bg-white text-slate-600 hover:bg-slate-50 shadow-sm transition-colors" data-category="ラクサ">🍜 ラクサ</button>
+                <button class="filter-btn px-5 py-2 rounded-full border border-slate-300 text-sm font-bold bg-white text-slate-600 hover:bg-slate-50 shadow-sm transition-colors" data-category="バクテー">🍲 バクテー</button>
+                <button class="filter-btn px-5 py-2 rounded-full border border-slate-300 text-sm font-bold bg-white text-slate-600 hover:bg-slate-50 shadow-sm transition-colors" data-category="チリクラブ">🦀 チリクラブ</button>
+            </div>
+        </section>
+
+        <!-- 地図セクション -->
+        <section class="mb-12 bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
+            <div class="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        グルメマップ
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-1">ピンをタップすると詳細が表示されます。下のリストをクリックすると地図が移動します。</p>
+                </div>
+            </div>
+            <div id="map"></div>
+        </section>
+
+        <!-- ガイド一覧セクション -->
+        <section>
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-3xl font-bold text-slate-800">お店ガイド</h2>
+                <span class="text-sm text-slate-500 bg-slate-200 py-1 px-3 rounded-full">全11店舗</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="restaurant-grid">
+                <!-- JavaScriptでここにカードが生成されます -->
+            </div>
+        </section>
+        
+        <p class="text-center text-xs text-slate-400 mt-12 mb-6">※料理の写真はイメージ（Illustrative representations）です。予算は1SGD=約123円で計算した目安です。</p>
+    </main>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        // ----------------------------------------------------
+        // 1. データ定義 (店舗情報、写真、座標)
+        // ----------------------------------------------------
+        const places = [
+            {
+                id: 1,
+                category: "ペーパーチキン",
+                name: "Hillman Restaurant",
+                desc: "日本人にも大人気！特製のタレに漬け込んだ鶏肉を紙で包んで揚げた、旨味たっぷりの王道ペーパーチキンです。",
+                budget: "約3,000円 〜 5,000円",
+                link: "https://www.google.com/maps/search/?api=1&query=Hillman+Restaurant+Singapore",
+                lat: 1.3113, 
+                lng: 103.8580,
+                color: "bg-amber-500",
+                images: [
+                    "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 2,
+                category: "ペーパーチキン",
+                name: "Manhill Restaurant",
+                desc: "ヒルマンの姉妹店。少し中心部から離れますが、同じく絶品のペーパーチキンが落ち着いた雰囲気で味わえます。",
+                budget: "約3,000円 〜 5,000円",
+                link: "https://www.google.com/maps/search/?api=1&query=Manhill+Restaurant+Singapore",
+                lat: 1.2825, 
+                lng: 103.7788,
+                color: "bg-amber-500",
+                images: [
+                    "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1600688640245-0d354b5df16a?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 3,
+                category: "ラクサ",
+                name: "328 Katong Laksa",
+                desc: "シンガポールラクサの代名詞的存在。ココナッツミルクの甘みと海鮮のダシ、スパイスのバランスが絶妙です。",
+                budget: "約850円 〜 1,500円",
+                link: "https://www.google.com/maps/search/?api=1&query=328+Katong+Laksa+Singapore",
+                lat: 1.3053, 
+                lng: 103.9054,
+                color: "bg-orange-500",
+                images: [
+                    "https://images.unsplash.com/photo-1626804475297-41609ea004df?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1555126634-323283e09096?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 4,
+                category: "ラクサ",
+                name: "Sungei Road Laksa",
+                desc: "炭火でスープを温め続ける昔ながらの屋台スタイル。ローカル感満載で、あっさりしつつもコクがあります。",
+                budget: "約500円 〜 1,000円",
+                link: "https://www.google.com/maps/search/?api=1&query=Sungei+Road+Laksa+Singapore",
+                lat: 1.3056, 
+                lng: 103.8562,
+                color: "bg-orange-500",
+                images: [
+                    "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1623683030383-7d52a8c3d790?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 5,
+                category: "ラクサ",
+                name: "Janggut Laksa",
+                desc: "「オリジナル・カトンラクサ」を名乗る老舗。マイルドで奥深い味わいで、辛いのが少し苦手な方にもおすすめ。",
+                budget: "約750円 〜 1,200円",
+                link: "https://www.google.com/maps/search/?api=1&query=Janggut+Laksa+Singapore",
+                lat: 1.2875, 
+                lng: 103.8034,
+                color: "bg-orange-500",
+                images: [
+                    "https://images.unsplash.com/photo-1569058242567-93de2f3642eb?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1590502593747-422e1183b0f5?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 6,
+                category: "バクテー",
+                name: "Song Fa Bak Kut Teh",
+                desc: "ミシュラン・ビブグルマン常連の人気チェーン。胡椒がピリッと効いたクリアなスープはお代わり自由です！",
+                budget: "約1,800円 〜 3,100円",
+                link: "https://www.google.com/maps/search/?api=1&query=Song+Fa+Bak+Kut+Teh+Singapore",
+                lat: 1.2887, 
+                lng: 103.8468,
+                color: "bg-yellow-600",
+                images: [
+                    "https://images.unsplash.com/photo-1548943487-a2e4e43b4850?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 7,
+                category: "バクテー",
+                name: "Founder Bak Kut Teh",
+                desc: "有名人もお忍びで通う老舗。柔らかい豚肉の旨味と胡椒の効いたスープがたまりません。",
+                budget: "約1,800円 〜 3,100円",
+                link: "https://www.google.com/maps/search/?api=1&query=Founder+Bak+Kut+Teh+Singapore",
+                lat: 1.3268, 
+                lng: 103.8530,
+                color: "bg-yellow-600",
+                images: [
+                    "https://images.unsplash.com/photo-1582878826629-29b7ad1cb431?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1605295555437-0131497a5526?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 8,
+                category: "バクテー",
+                name: "Ng Ah Sio Bak Kut Teh",
+                desc: "ニンニクと胡椒がガツンと効いた、濃いめでパンチのあるスープが好きな方に一押しのお店です。",
+                budget: "約1,800円 〜 3,100円",
+                link: "https://www.google.com/maps/search/?api=1&query=Ng+Ah+Sio+Bak+Kut+Teh+Singapore",
+                lat: 1.3180, 
+                lng: 103.8504,
+                color: "bg-yellow-600",
+                images: [
+                    "https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1548943487-a2e4e43b4850?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 9,
+                category: "チリクラブ",
+                name: "JUMBO Seafood",
+                desc: "チリクラブといえばココ！という超有名店。観光客にも入りやすく、王道の甘辛いソースが絶品です。",
+                budget: "約9,800円 〜 18,500円",
+                link: "https://www.google.com/maps/search/?api=1&query=JUMBO+Seafood+Singapore",
+                lat: 1.2894, 
+                lng: 103.8444,
+                color: "bg-red-600",
+                images: [
+                    "https://images.unsplash.com/photo-1559737558-2f5a35f4523b?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 10,
+                category: "チリクラブ",
+                name: "Long Beach Seafood",
+                desc: "チリクラブも美味しいですが、胡椒の辛さが刺激的な「ブラックペッパークラブ」の発祥店としても有名です。",
+                budget: "約11,000円 〜 18,500円",
+                link: "https://www.google.com/maps/search/?api=1&query=Long+Beach+Seafood+Singapore",
+                lat: 1.3005, 
+                lng: 103.8824,
+                color: "bg-red-600",
+                images: [
+                    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1615920365022-bba3ec379895?auto=format&fit=crop&w=400&q=80"
+                ]
+            },
+            {
+                id: 11,
+                category: "チリクラブ",
+                name: "No Signboard Seafood",
+                desc: "地元民にも愛される名店。チリクラブはもちろん、白胡椒を使ったマイルドな「ホワイトペッパークラブ」も人気。",
+                budget: "約9,800円 〜 18,500円",
+                link: "https://www.google.com/maps/search/?api=1&query=No+Signboard+Seafood+Singapore",
+                lat: 1.3130, 
+                lng: 103.8812,
+                color: "bg-red-600",
+                images: [
+                    "https://images.unsplash.com/photo-1559737558-2f5a35f4523b?auto=format&fit=crop&w=400&q=80",
+                    "https://images.unsplash.com/photo-1563259965-02ff43ad0e77?auto=format&fit=crop&w=400&q=80"
+                ]
+            }
+        ];
+
+        // ----------------------------------------------------
+        // 2. 地図の初期化とフィルターロジック
+        // ----------------------------------------------------
+        // シンガポール中心部に設定
+        const map = L.map('map').setView([1.30, 103.84], 12);
+
+        // クリーンな観光向けデザインのタイルレイヤーを使用 (CartoDB Voyager)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // マーカーを管理するレイヤーグループ (フィルター切り替え用)
+        const markerLayerGroup = L.layerGroup().addTo(map);
+        let markers = {};
+
+        // カスタムアイコンを作成する関数（色を変えるため）
+        function createCustomIcon(colorClass) {
+            let colorHex = "#ec4899";
+            if(colorClass.includes("amber")) colorHex = "#f59e0b";
+            if(colorClass.includes("orange")) colorHex = "#f97316";
+            if(colorClass.includes("yellow")) colorHex = "#ca8a04";
+            if(colorClass.includes("red")) colorHex = "#dc2626";
+
+            const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${colorHex}" width="36px" height="36px" stroke="#ffffff" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+            
+            return L.divIcon({
+                className: "custom-pin",
+                html: svgIcon,
+                iconSize: [36, 36],
+                iconAnchor: [18, 36],
+                popupAnchor: [0, -32]
+            });
+        }
+
+        // ----------------------------------------------------
+        // 3. UIの生成と描画関数 (レストランカード)
+        // ----------------------------------------------------
+        const grid = document.getElementById('restaurant-grid');
+
+        // カテゴリごとの絵文字
+        const getEmoji = (cat) => {
+            if(cat === 'ペーパーチキン') return '🍗';
+            if(cat === 'ラクサ') return '🍜';
+            if(cat === 'バクテー') return '🍲';
+            if(cat === 'チリクラブ') return '🦀';
+            return '🍽️';
+        }
+
+        // 指定されたカテゴリで地図とリストを再描画する関数
+        function renderItems(categoryFilter) {
+            // 表示をクリア
+            markerLayerGroup.clearLayers();
+            grid.innerHTML = '';
+            markers = {};
+
+            // フィルター適用
+            const filteredPlaces = categoryFilter === 'all' 
+                ? places 
+                : places.filter(p => p.category === categoryFilter);
+
+            // リスト上部の店舗数を更新
+            const countSpan = document.querySelector('span.text-sm.text-slate-500.bg-slate-200');
+            if(countSpan) countSpan.textContent = `全${filteredPlaces.length}店舗`;
+
+            filteredPlaces.forEach(place => {
+                // マーカーの追加
+                const marker = L.marker([place.lat, place.lng], { icon: createCustomIcon(place.color) });
+                const popupContent = `
+                    <div class="p-1 min-w-[150px]">
+                        <span class="text-xs font-bold text-white px-2 py-0.5 rounded-full ${place.color}">${place.category}</span>
+                        <h3 class="font-bold text-base mt-2 leading-tight">${place.name}</h3>
+                        <p class="text-xs text-slate-500 mt-1 mb-2">予算: ${place.budget}</p>
+                        <a href="${place.link}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                            Google Mapで見る
+                        </a>
+                    </div>
+                `;
+                marker.bindPopup(popupContent);
+                markerLayerGroup.addLayer(marker);
+                markers[place.id] = marker;
+
+                // カード要素の作成
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-slate-100 flex flex-col cursor-pointer transform hover:-translate-y-1 transition-transform";
+                
+                card.onclick = () => {
+                    map.flyTo([place.lat, place.lng], 15, { duration: 1.5 });
+                    setTimeout(() => {
+                        markers[place.id].openPopup();
+                    }, 1000);
+                    window.scrollTo({
+                        top: document.getElementById('map').offsetTop - 20,
+                        behavior: 'smooth'
+                    });
+                };
+
+                const imagesHtml = `
+                    <div class="grid grid-cols-2 gap-1 h-48 bg-slate-100 relative group">
+                        <img src="${place.images[0]}" alt="${place.name} 写真1" class="w-full h-full object-cover" loading="lazy">
+                        <img src="${place.images[1]}" alt="${place.name} 写真2" class="w-full h-full object-cover" loading="lazy">
+                        <!-- 写真注記（ホバー時） -->
+                        <div class="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            イメージ画像
+                        </div>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    ${imagesHtml}
+                    <div class="p-6 flex-grow flex flex-col">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="${place.color} text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                                ${getEmoji(place.category)} ${place.category}
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-2 leading-tight">${place.name}</h3>
+                        <p class="text-sm text-slate-600 mb-4 flex-grow">${place.desc}</p>
+                        <div class="bg-slate-50 p-3 rounded-lg mb-4 border border-slate-100 flex items-center gap-2">
+                            <span class="text-lg">💰</span>
+                            <div class="text-sm font-medium text-slate-700">
+                                <span class="block text-xs text-slate-400 font-normal">1人あたりの予算</span>
+                                ${place.budget}
+                            </div>
+                        </div>
+                        <a href="${place.link}" target="_blank" rel="noopener noreferrer" 
+                           class="mt-auto block text-center w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-xl transition-colors"
+                           onclick="event.stopPropagation();">
+                            📍 Google Mapで開く
+                        </a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // 絞り込んだ結果に合わせて地図の表示範囲（ズーム）を自動調整
+            if (filteredPlaces.length > 0) {
+                const group = new L.featureGroup(Object.values(markers));
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        // ----------------------------------------------------
+        // 4. イベントリスナー (フィルターボタン)
+        // ----------------------------------------------------
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // ボタンスタイルのリセット (すべて非アクティブ化)
+                filterButtons.forEach(b => {
+                    b.classList.remove('bg-slate-800', 'text-white');
+                    b.classList.add('bg-white', 'text-slate-600');
+                });
+                
+                // クリックされたボタンをアクティブ化
+                e.currentTarget.classList.remove('bg-white', 'text-slate-600');
+                e.currentTarget.classList.add('bg-slate-800', 'text-white');
+
+                // 描画更新
+                const category = e.currentTarget.getAttribute('data-category');
+                renderItems(category);
+            });
+        });
+
+        // 初回読み込み時にすべてを描画
+        renderItems('all');
+
+    </script>
+</body>
+</html>
